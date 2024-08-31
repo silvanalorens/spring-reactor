@@ -8,18 +8,23 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "dishes")
+@Document(collection = "clients")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Dish {
+public class Client {
     @Id
     @EqualsAndHashCode.Include
     private String id;
     @Field
-    private String name;
-
-    private Double price;
-    private Boolean status;
+    private String firsName;
+    @Field
+    private String lastName;
+    @Field
+    private LocalDate birthDate;
+    @Field
+    private String urlPhoto;
 }

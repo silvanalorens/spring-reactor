@@ -8,18 +8,26 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "dishes")
+@Document(collection = "menus")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Dish {
+public class Menu {
     @Id
     @EqualsAndHashCode.Include
     private String id;
+
+    @Field
+    private String icon;
+
     @Field
     private String name;
 
-    private Double price;
-    private Boolean status;
+    @Field
+    private String uri;
+
+    @Field
+    private List<String> roles;
 }
