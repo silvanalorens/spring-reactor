@@ -8,22 +8,26 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "invoices")
+@Document(collection = "tuitions")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Invoice {
+public class Tuition {
     @Id
     @EqualsAndHashCode.Include
     private String id;
     @Field
-    private String description;
+    private LocalDate registerDate;
     @Field
-    private Client client;
+    private Student student;
     @Field
-    private List<InvoiceDetail> items;
+    private List<Course> courses;
+    @Field
+    private Boolean status;
+
 
 }

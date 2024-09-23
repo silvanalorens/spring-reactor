@@ -1,8 +1,11 @@
 package com.mitocode.springreactor.controller;
 
-import com.mitocode.springreactor.model.Dish;
-import com.mitocode.springreactor.service.IDishService;
+import com.mitocode.springreactor.dto.CourseDTO;
+import com.mitocode.springreactor.model.Course;
+import com.mitocode.springreactor.service.ICourseService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
@@ -12,17 +15,19 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.function.Function;
 
 @RestController
 //Controller y ResponseBody devuelve json
-@RequestMapping("/dishes")
+@RequestMapping("/courses")
 @RequiredArgsConstructor
-public class DishController {
-    private final IDishService service;
+public class CourseController {
+    private final ICourseService service;
+    private final ModelMapper modelMapper;
 
     @GetMapping
-    public Mono<ResponseEntity<Flux<Dish>>>  findAll(){
-        Flux<Dish> fx = service.findAll();
+    public Mono<ResponseEntity<Flux<CourseDTO>>>  findAll(){
+        Flux<CourseDTO> fx = service.findAll().map(this::convertToDTO);
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(fx))
@@ -30,17 +35,19 @@ public class DishController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Dish>> findById(@PathVariable("id") String id){
+    public Mono<ResponseEntity<CourseDTO>> findById(@PathVariable("id") String id){
         return service.findById(id)
+                .map(this::convertToDTO)
                 .map(e->ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(e))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
     @PostMapping
-    public Mono<ResponseEntity<Dish>> save(@RequestBody Dish dish,
-                                           final ServerHttpRequest req){
-        return service.save(dish)
+    public Mono<ResponseEntity<CourseDTO>> save(@Valid @RequestBody CourseDTO courseDTO,
+                                             final ServerHttpRequest req){
+        return service.save(this.convertToDocument(courseDTO))
+                .map(this::convertToDTO)
                 .map(e -> ResponseEntity.created(
                         URI.create(req.getURI().toString().concat("/").concat(e.getId()))
                         )
@@ -49,13 +56,14 @@ public class DishController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<Dish>> update(@PathVariable("id") String id,@RequestBody Dish dish){
-        return Mono.just(dish)
+    public Mono<ResponseEntity<CourseDTO>> update(@Valid @PathVariable("id") String id, @RequestBody CourseDTO dto){
+        return Mono.just(this.convertToDocument(dto))
                 .map(e->{
                     e.setId(id);
                     return e;
                 })
                 .flatMap(e->service.update(id,e))
+                .map(this::convertToDTO)
                 .map(e->ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(e)
@@ -72,5 +80,10 @@ public class DishController {
                             return Mono.just(ResponseEntity.notFound().build());
                 });
     }
-
+    private CourseDTO convertToDTO(Course model) {
+        return modelMapper.map(model, CourseDTO.class);
+    }
+    private Course convertToDocument(CourseDTO dto) {
+        return modelMapper.map(dto, Course.class);
+    }
 }
