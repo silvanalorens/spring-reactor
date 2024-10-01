@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "users")
+@Document(collection = "data_users")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
     @Id
