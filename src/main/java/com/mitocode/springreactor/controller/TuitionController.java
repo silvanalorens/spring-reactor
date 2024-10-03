@@ -1,9 +1,12 @@
 package com.mitocode.springreactor.controller;
 
+import com.mitocode.springreactor.dto.TuitionDTO;
 import com.mitocode.springreactor.model.Tuition;
 import com.mitocode.springreactor.service.ITuitionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -19,10 +22,11 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class TuitionController {
     private final ITuitionService service;
-
+    @Qualifier("tuitionMapper")
+    private final ModelMapper modelMapper;
     @GetMapping
-    public Mono<ResponseEntity<Flux<Tuition>>>  findAll(){
-        Flux<Tuition> fx = service.findAll();
+    public Mono<ResponseEntity<Flux<TuitionDTO>>>  findAll(){
+        Flux<TuitionDTO> fx = service.findAll().map(this::convertToDto);
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(fx))
@@ -30,17 +34,19 @@ public class TuitionController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Tuition>> findById(@PathVariable("id") String id){
+    public Mono<ResponseEntity<TuitionDTO>> findById(@PathVariable("id") String id){
         return service.findById(id)
+                .map(this::convertToDto)
                 .map(e->ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(e))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
     @PostMapping
-    public Mono<ResponseEntity<Tuition>> save(@Valid @RequestBody Tuition tuition,
+    public Mono<ResponseEntity<TuitionDTO>> save(@Valid @RequestBody TuitionDTO tuitionDTO,
                                              final ServerHttpRequest req){
-        return service.save(tuition)
+        return service.save(convertToDocument(tuitionDTO))
+                .map(this::convertToDto)
                 .map(e -> ResponseEntity.created(
                         URI.create(req.getURI().toString().concat("/").concat(e.getId()))
                         )
@@ -49,13 +55,14 @@ public class TuitionController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<Tuition>> update(@Valid @PathVariable("id") String id, @RequestBody Tuition tuition){
-        return Mono.just(tuition)
+    public Mono<ResponseEntity<TuitionDTO>> update(@Valid @PathVariable("id") String id, @RequestBody TuitionDTO tuitionDTO){
+        return Mono.just(convertToDocument(tuitionDTO))
                 .map(e->{
                     e.setId(id);
                     return e;
                 })
                 .flatMap(e->service.update(id,e))
+                .map(this::convertToDto)
                 .map(e->ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(e)
@@ -80,5 +87,11 @@ public class TuitionController {
                         .body(bytes))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
+    private TuitionDTO convertToDto(Tuition model) {
+        return modelMapper.map(model, TuitionDTO.class);
+    }
 
+    private Tuition convertToDocument(TuitionDTO dto) {
+        return modelMapper.map(dto, Tuition.class);
+    }
 }

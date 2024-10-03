@@ -1,10 +1,13 @@
 package com.mitocode.springreactor.controller;
 
+import com.mitocode.springreactor.dto.StudentDTO;
 import com.mitocode.springreactor.model.Course;
 import com.mitocode.springreactor.model.Student;
 import com.mitocode.springreactor.service.ICourseService;
 import com.mitocode.springreactor.service.IStudentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -20,10 +23,11 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class StudentController {
     private final IStudentService service;
+    private final ModelMapper modelMapper;
 
     @GetMapping
-    public Mono<ResponseEntity<Flux<Student>>>  findAll(){
-        Flux<Student> fx = service.findAll();
+    public Mono<ResponseEntity<Flux<StudentDTO>>>  findAll(){
+        Flux<StudentDTO> fx = service.findAll().map(this::convertToDto);
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(fx))
@@ -31,17 +35,19 @@ public class StudentController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Student>> findById(@PathVariable("id") String id){
+    public Mono<ResponseEntity<StudentDTO>> findById(@PathVariable("id") String id){
         return service.findById(id)
+                .map(this::convertToDto)
                 .map(e->ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(e))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
     @PostMapping
-    public Mono<ResponseEntity<Student>> save(@RequestBody Student student,
+    public Mono<ResponseEntity<StudentDTO>> save(@Valid @RequestBody StudentDTO studentDTO,
                                              final ServerHttpRequest req){
-        return service.save(student)
+        return service.save(this.convertToDocument(studentDTO))
+                .map(this::convertToDto)
                 .map(e -> ResponseEntity.created(
                         URI.create(req.getURI().toString().concat("/").concat(e.getId()))
                         )
@@ -50,13 +56,14 @@ public class StudentController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<Student>> update(@PathVariable("id") String id, @RequestBody Student student){
-        return Mono.just(student)
+    public Mono<ResponseEntity<StudentDTO>> update(@PathVariable("id") String id, @RequestBody StudentDTO studentDTO){
+        return Mono.just(convertToDocument(studentDTO))
                 .map(e->{
                     e.setId(id);
                     return e;
                 })
                 .flatMap(e->service.update(id,e))
+                .map(this::convertToDto)
                 .map(e->ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(e)
@@ -73,5 +80,11 @@ public class StudentController {
                             return Mono.just(ResponseEntity.notFound().build());
                 });
     }
+    private StudentDTO convertToDto(Student model) {
+        return modelMapper.map(model, StudentDTO.class);
+    }
 
+    private Student convertToDocument(StudentDTO dto) {
+        return modelMapper.map(dto, Student.class);
+    }
 }
