@@ -87,6 +87,26 @@ public class TuitionController {
                         .body(bytes))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
+    @GetMapping("/generateAgeAsc")
+    public Mono<ResponseEntity<Flux<TuitionDTO>>>  generateAsc(){
+
+        Flux<TuitionDTO> fx = service.findAndSortAgeAsc()
+                .map(this::convertToDto);
+        return Mono.just(ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(fx))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+    @GetMapping("/generateAgeDsc")
+    public Mono<ResponseEntity<Flux<TuitionDTO>>>  generateDsc(){
+
+        Flux<TuitionDTO> fx = service.findAndSortAgeDsc()
+                .map(this::convertToDto);
+        return Mono.just(ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(fx))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
     private TuitionDTO convertToDto(Tuition model) {
         return modelMapper.map(model, TuitionDTO.class);
     }
